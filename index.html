@@ -6,11 +6,9 @@
     <title>Asteroid Interceptor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- GOOGLE ADSENSE - Replace ca-pub-XXXXXXXXXXXXXXXX with your actual publisher ID -->
-    <!-- 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
-     crossorigin="anonymous"></script> 
-    -->
+    <!-- GOOGLE ADSENSE - Live Production IDs -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4970744686806954"
+     crossorigin="anonymous"></script>
 
     <style>
         body {
@@ -49,7 +47,7 @@
         /* Ad Containers */
         .ad-banner-top {
             width: 100%;
-            height: 90px;
+            min-height: 90px;
             background: #000;
             display: flex;
             justify-content: center;
@@ -58,10 +56,11 @@
             z-index: 50;
         }
         .ad-placeholder-text {
-            color: #444;
-            font-size: 10px;
+            color: #222;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            pointer-events: none;
         }
         .privacy-link {
             position: fixed;
@@ -79,17 +78,16 @@
 </head>
 <body>
 
-    <!-- TOP AD BANNER SLOT -->
+    <!-- TOP AD BANNER (Horizontal) -->
     <div class="ad-banner-top">
         <div class="ad-placeholder-text absolute">Advertisement</div>
-        <!-- Replace with your AdSense Ad Unit Code -->
         <ins class="adsbygoogle"
-             style="display:inline-block;width:728px;height:90px"
-             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-             data-ad-slot="1234567890"></ins>
-        <script>
-             (window.adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
+             id="top-ad-unit"
+             style="display:block; width:100%; height:90px;"
+             data-ad-client="ca-pub-4970744686806954"
+             data-ad-slot="9831097174"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
     </div>
 
     <div id="game-container">
@@ -108,28 +106,27 @@
         <!-- Start Screen -->
         <div id="startScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20 text-white p-6 text-center">
             <h1 class="text-5xl md:text-7xl font-bold mb-4 game-font tracking-tighter text-cyan-400">ASTEROID<br>INTERCEPTOR</h1>
-            <p class="mb-8 text-lg opacity-80 max-w-md">The sector is under heavy bombardment. Intercept the asteroids before they reach the colony.</p>
+            <p class="mb-8 text-lg opacity-80 max-w-md">Neutralize all incoming threats. Sector defense is in your hands.</p>
             <button id="startButton" class="interactive px-12 py-5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-full transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(8,145,178,0.5)] uppercase tracking-widest">
-                Launch Mission
+                Start Mission
             </button>
         </div>
 
         <!-- Game Over Screen -->
         <div id="gameOverScreen" class="absolute inset-0 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center z-30 text-white p-6 text-center hidden">
-            <h2 class="text-6xl font-bold mb-2 game-font text-red-500">MISSION FAILED</h2>
-            <p id="finalScore" class="text-2xl mb-8">Score: 0</p>
+            <h2 class="text-6xl font-bold mb-1 game-font text-red-500">FAILED</h2>
+            <p id="finalScore" class="text-2xl mb-6">Score: 0</p>
             
-            <!-- RECTANGLE AD SLOT -->
-            <div class="mb-8 bg-black/40 p-2 rounded border border-slate-700 min-w-[300px] min-h-[250px] flex flex-col items-center justify-center interactive">
+            <!-- RECTANGLE AD SLOT (Game Over) -->
+            <div class="mb-6 bg-black/40 p-2 rounded border border-slate-700 min-w-[300px] min-h-[250px] flex flex-col items-center justify-center interactive">
                 <div class="ad-placeholder-text mb-2">Advertisement</div>
                 <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-                     data-ad-slot="0987654321"
-                     data-ad-format="rectangle"></ins>
-                <script>
-                     (window.adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
+                     id="game-over-ad-unit"
+                     style="display:block; min-width:300px; min-height:250px;"
+                     data-ad-client="ca-pub-4970744686806954"
+                     data-ad-slot="9831097174"
+                     data-ad-format="rectangle"
+                     data-full-width-responsive="true"></ins>
             </div>
 
             <button id="restartButton" class="interactive px-12 py-5 bg-white text-black font-bold rounded-full transition-all transform hover:scale-105 active:scale-95 uppercase tracking-widest">
@@ -140,7 +137,7 @@
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <!-- Mandatory Privacy Policy Link for AdSense -->
+    <!-- Mandatory Privacy Policy Link -->
     <a href="/privacy-policy" class="privacy-link interactive">Privacy Policy</a>
 
     <script>
@@ -155,6 +152,9 @@
         const scoreDisplay = document.getElementById('scoreDisplay');
         const finalScoreDisplay = document.getElementById('finalScore');
         const levelDisplay = document.getElementById('levelDisplay');
+
+        // Ad management
+        let gameOverAdTriggered = false;
 
         // Game Constants
         const SHIP_SIZE = 30;
@@ -246,7 +246,6 @@
                 ctx.shadowBlur = 8;
                 ctx.shadowColor = '#fff';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowBlur = 0;
             }
         }
 
@@ -365,6 +364,14 @@
                     gameOverScreen.classList.remove('hidden');
                     hud.classList.add('hidden');
                     finalScoreDisplay.innerText = `Final Score: ${score}`;
+                    
+                    // Request Game Over ad after screen is visible
+                    if (!gameOverAdTriggered) {
+                        setTimeout(() => {
+                            try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+                            gameOverAdTriggered = true;
+                        }, 200);
+                    }
                     break;
                 }
             }
@@ -410,9 +417,16 @@
             requestAnimationFrame(gameLoop);
         }
 
+        // Inputs
         window.addEventListener('keydown', (e) => keys[e.key] = true);
         window.addEventListener('keyup', (e) => keys[e.key] = false);
-        const getCoord = (e) => ({ x: (e.touches ? e.touches[0].clientX : e.clientX), y: (e.touches ? e.touches[0].clientY : e.clientY) - 90 });
+        const getCoord = (e) => {
+            const bannerHeight = document.querySelector('.ad-banner-top')?.offsetHeight || 90;
+            return {
+                x: (e.touches ? e.touches[0].clientX : e.clientX),
+                y: (e.touches ? e.touches[0].clientY : e.clientY) - bannerHeight
+            };
+        };
         const handleInput = (e) => { const c = getCoord(e); mouse.x = c.x; mouse.y = c.y; };
         window.addEventListener('mousedown', (e) => { mouse.pressed = true; handleInput(e); });
         window.addEventListener('mouseup', () => mouse.pressed = false);
@@ -424,7 +438,16 @@
         startButton.addEventListener('click', () => { resetGame(); gameState = 'PLAYING'; startScreen.classList.add('hidden'); hud.classList.remove('hidden'); });
         restartButton.addEventListener('click', () => { resetGame(); gameState = 'PLAYING'; gameOverScreen.classList.add('hidden'); hud.classList.remove('hidden'); });
         window.addEventListener('resize', resize);
-        window.onload = () => { resize(); requestAnimationFrame(gameLoop); };
+        
+        window.onload = () => { 
+            resize(); 
+            requestAnimationFrame(gameLoop); 
+            
+            // Safe initialization of top ad
+            setTimeout(() => {
+                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+            }, 800);
+        };
     </script>
 </body>
-</html>
+    </html>
